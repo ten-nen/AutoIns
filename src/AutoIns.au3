@@ -30,7 +30,7 @@
 #include <File.au3>
 
 Local Const $sConfigPath =@ScriptDir&"\conf\AutoIns.ini"
-Local $aInstallArray
+Local $aInstallArray,$aInstallFileArray
 Local $hFile = FileOpen(@ScriptDir & "\install.log", 1)
 
 
@@ -53,7 +53,7 @@ Func Load_Config()
 	_FileWriteLog($hFile, "开始加载配置文件..")
 	$iFileExists = FileExists($sConfigPath)
 	If Not $iFileExists Then
-		;MsgBox($MB_SYSTEMMODAL,"系统提示","未找到配置文件！")
+		MsgBox($MB_SYSTEMMODAL,"提示信息","未找到配置文件，自动化安装退出！")
 		_FileWriteLog($hFile, "未找到配置文件，自动化安装退出！")
 		FileClose($hFile)
 		Exit
@@ -61,10 +61,22 @@ Func Load_Config()
 
 	$aInstallArray = IniReadSection($sConfigPath, "Install")
 	If @error Then
+		MsgBox($MB_SYSTEMMODAL,"提示信息","加载配置文件出错，自动化安装退出！")
 		_FileWriteLog($hFile, "加载配置文件出错，自动化安装退出！")
 		FileClose($hFile)
 		Exit
 	EndIf
+
+	$aInstallFileArray = _FileListToArray(@ScriptDir&"\resources", "*")
+    If @error = 1 Then
+        MsgBox($MB_SYSTEMMODAL, "提示信息", "资源目录无效（" & @ScriptDir&"\resources" & "），自动化安装退出！")
+        Exit
+    EndIf
+    If @error = 4 Then
+        MsgBox($MB_SYSTEMMODAL, "提示信息", "资源目录未发现文件，自动化安装退出！")
+        Exit
+    EndIf
+
 	_FileWriteLog($hFile, "加载配置文件完毕..")
 EndFunc
 
@@ -92,24 +104,40 @@ Func Install_Run()
 EndFunc
 
 Func AutoRun($sType)
-	Switch $sType
-		Case "DotNetFx45"
-			Install_DotNexFx45()
-		Case "ReportViewer"
-			Install_ReportViewer()
-		Case "GBESClient"
-			Install_GBESClient()
-		Case "Redis"
-			Install_Redis()
-		Case "DXperience"
-			Install_DXperience()
+	$sTypeLower= StringLower($sType)
+	$sFileName= FindFile($sTypeLower)
+	If StringLen($sFileName)==0 Then
+		_FileWriteLog($hFile, $sType&"未找到对应安装文件，跳过此安装..")
+		Return
+	EndIf
+	$sFilePath=@ScriptDir & "\resources\" & $sFileName
+	Switch $sTypeLower
+		Case "dotnetfx45"
+			Install_DotNexFx45($sFilePath)
+		Case "reportviewer"
+			Install_ReportViewer($sFilePath)
+		Case "gbesclient"
+			Install_GBESClient($sFilePath)
+		Case "redis"
+			Install_Redis($sFilePath)
+		Case "dxperience"
+			Install_DXperience($sFilePath)
 	EndSwitch
+EndFunc
+
+Func FindFile($sTypeLower)
+	For $sFileName in $aInstallFileArray
+		If StringLower(StringLeft($sFileName,StringLen($sTypeLower)))==$sTypeLower Then
+			Return $sFileName
+		EndIf
+	Next
+	Return ""
 EndFunc
 
 Func BatRun($sType)
 	$iResult=_RunDos(@ScriptDir&"\conf\"&$sType&".bat")
 	If $iResult<>0 Then
-		;MsgBox($MB_SYSTEMMODAL,"提示信息","IIS安装失败！")
+		MsgBox($MB_SYSTEMMODAL,"提示信息",$sType&".bat 处理失败，自动化安装退出！ ")
 		_FileWriteLog($hFile, $sType&".bat 处理失败，自动化安装退出！ ")
 		FileClose($hFile)
 		Exit
@@ -146,8 +174,8 @@ Func Execute_CmdLine($sCmdLine)
 	;Return $iResult
 EndFunc
 
-Func Install_DotNexFx45()
-	Run(@ScriptDir & "\resources\dotnetfx4.5.2-x86-x64-AllOS-ENU.exe")
+Func Install_DotNexFx45($sFilePath)
+	Run($sFilePath)
 	WinWaitActive("Microsoft .NET Framework 4.5.2","我已阅读并接受许可条款(&A)。")
 	$aPosition=ControlGetPos("Microsoft .NET Framework 4.5.2","我已阅读并接受许可条款(&A)。","Button3")
 	MouseClick("left", $aPosition[0], $aPosition[1])
@@ -157,8 +185,8 @@ Func Install_DotNexFx45()
 	Send("!f")
 EndFunc
 
-Func Install_ReportViewer()
-	Run(@ScriptDir & "\resources\ReportViewer.exe")
+Func Install_ReportViewer($sFilePath)
+	Run($sFilePath)
 	WinWaitActive("Microsoft ReportViewer 2010 Redistributable 安装程序","下一步(&N) >")
 	Send("!n")
 	$aPosition=ControlGetPos("Microsoft ReportViewer 2010 Redistributable 安装程序","我已阅读并接受许可条款(&A)。","Button3")
@@ -169,8 +197,8 @@ Func Install_ReportViewer()
 	Send("!f")
 EndFunc
 
-Func Install_GBESClient()
-	Run(@ScriptDir & "\resources\GBES客户端安装程序.exe")
+Func Install_GBESClient($sFilePath)
+	Run($sFilePath)
 	WinWaitActive("GBES客户端驱动","下一步(&N) >")
 	Send("!n")
 	WinWaitActive("GBES客户端驱动","选择安装位置")
@@ -181,8 +209,8 @@ Func Install_GBESClient()
 	Send("!f")
 EndFunc
 
-Func Install_Redis()
-	Run(@ScriptDir & "\resources\redis-2.4.6-setup-64-bit.exe")
+Func Install_Redis($sFilePath)
+	Run($sFilePath)
 	WinWaitActive("Setup - Redis","Welcome to the Redis Setup Wizard")
 	Send("{ENTER}")
 	WinWaitActive("Setup - Redis","License Agreement")
@@ -203,8 +231,8 @@ Func Install_Redis()
 	Send("{ENTER}")
 EndFunc
 
-Func Install_DXperience()
-	Run(@ScriptDir & "\resources\DXperience-11.1.8.exe")
+Func Install_DXperience($sFilePath)
+	Run($sFilePath)
 	WinWaitActive("","Next")
 	Send("{ENTER}")
 	WinWaitActive("","Next")

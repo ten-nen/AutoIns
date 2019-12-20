@@ -1,1 +1,1 @@
-D:\soft\resources\SqlServer\Setup.exe setup.exe /QS /IACCEPTSQLSERVERLICENSETERMS /ConfigurationFile=D:\AutoIns\conf\sqlserver.conf.ini
+D:\soft\resources\SqlServer\setup.exe /QS /IACCEPTSQLSERVERLICENSETERMS /ConfigurationFile=D:\AutoIns\conf\sqlserver.ini
