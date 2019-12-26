@@ -1,0 +1,2 @@
+rem 查询逻辑文件名 restore filelistonly from disk='D:\AutoIns\resources\ScoreData_XinJiang_FJ_34_20190927.bak'
+sqlcmd -S {{DbInstance}} -E -Q "RESTORE DATABASE {{RestoreName}} FROM DISK='{{BakFilePath}}' WITH MOVE '{{MdfLogicalName}}' TO '{{MdfFileToPath}}', Move '{{LogLogicalName}}' TO '{{LogFileToPath}}'"
