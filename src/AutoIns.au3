@@ -23,17 +23,16 @@
 #AutoIt3Wrapper_Res_Language=2052
 #EndRegion ;**** 编译指令由 by AutoIt3Wrapper_GUI 创建 ****
 #Region ;**** 编译指令由 by AutoIt3Wrapper_GUI 创建 ****
-#EndRegion ;**** 编译指令由 by AutoIt3Wrapper_GUI 创建 ****
 #include <MsgBoxConstants.au3>
 #include <WinAPIFiles.au3>
 #include <Process.au3>
 #include <File.au3>
 
-Local Const $sConfigPath =@ScriptDir&"\conf\AutoIns.ini"
-Local Const $sSqlServerIniPath=@ScriptDir&"\conf\sqlserver.ini"
-Local Const $sPathAutoIt3=@ScriptDir & "\conf\lib\AutoIt3_x64.exe"
-Local $aInstalls,$aInstallFileNames,$aBattFileNames,$aAu3FileNames
-Local $hFile = FileOpen(@ScriptDir & "\install.log", 1)
+Local Const $sConfigPath =@WorkingDir&"\conf\AutoIns.ini"
+Local Const $sSqlServerIniPath=@WorkingDir&"\conf\sqlserver.ini"
+Local Const $sPathAutoIt3=@WorkingDir & "\lib\AutoIt3\AutoIt3_x64.exe"
+Local $aInstalls,$aBattFileNames,$aAu3FileNames
+Local $hFile = FileOpen(@WorkingDir & "\install.log", 1)
 
 Main()
 
@@ -60,29 +59,20 @@ Func Load_Config()
 	$iFileExists = FileExists($sPathAutoIt3)
 	If Not $iFileExists Then MsgToExit("未找到AutoIt3.exe文件，自动化安装退出！")
 
-	$aInstallFileNames = _FileListToArray(@ScriptDir&"\resources", "*")
-	;_ArrayDisplay($aInstallFileNames, "文件清单") ;测试显示文件清单
+	$aBattFileNames = _FileListToArray(@WorkingDir&"\conf\batt", "*")
     If @error = 1 Then
-		MsgToExit("资源目录无效（" & @ScriptDir&"\resources" & "），自动化安装退出！")
+		MsgToExit("bat模板目录无效（" & @WorkingDir&"\conf\batt" & "），自动化安装退出！")
     EndIf
     If @error = 4 Then
-		MsgToExit("资源目录（" & @ScriptDir&"\resources" & "）未发现文件，自动化安装退出！")
+		MsgToExit("bat模板目录（" & @WorkingDir&"\conf\batt" & "）未发现文件，自动化安装退出！")
     EndIf
 
-	$aBattFileNames = _FileListToArray(@ScriptDir&"\conf\batt", "*")
+	$aAu3FileNames = _FileListToArray(@WorkingDir&"\conf\script", "*")
     If @error = 1 Then
-		MsgToExit("bat模板目录无效（" & @ScriptDir&"\conf\batt" & "），自动化安装退出！")
+		MsgToExit("au3脚本目录无效（" & @WorkingDir&"\conf\script" & "），自动化安装退出！")
     EndIf
     If @error = 4 Then
-		MsgToExit("bat模板目录（" & @ScriptDir&"\conf\batt" & "）未发现文件，自动化安装退出！")
-    EndIf
-
-	$aAu3FileNames = _FileListToArray(@ScriptDir&"\conf\script", "*")
-    If @error = 1 Then
-		MsgToExit("au3脚本目录无效（" & @ScriptDir&"\conf\script" & "），自动化安装退出！")
-    EndIf
-    If @error = 4 Then
-		MsgToExit("au3脚本目录（" & @ScriptDir&"\conf\script" & "）未发现文件，自动化安装退出！")
+		MsgToExit("au3脚本目录（" & @WorkingDir&"\conf\script" & "）未发现文件，自动化安装退出！")
     EndIf
 
 	_FileWriteLog($hFile, "加载配置文件完毕..")
@@ -101,28 +91,23 @@ Func Install_Run()
 			LoadBatt_Run($aInstalls[$i][0])
 		EndIf
 		_FileWriteLog($hFile, $aInstalls[$i][0]&" 处理完成..")
-		Sleep(3000)
+		Sleep(1000)
 	Next
 
 	;BlockInput($BI_ENABLE) ; 启用户鼠标和键盘输入
 EndFunc
 
 Func LoadScript_Run($sType)
-	;查找对应安装文件
-	$sFileName=FindFileByStart($aInstallFileNames,$sType)
-	If StringLen($sFileName)==0 Then MsgToExit($sType&"未找到对应安装文件，自动化安装退出！")
-
 	;查找对应脚本
 	$sAu3FileName=FindFileByStart($aAu3FileNames,$sType)
 	If StringLen($sAu3FileName)==0 Then MsgToExit($sType&"未找到对应au3脚本文件，自动化安装退出！")
 
-	$sFilePath=@ScriptDir & "\resources\" & $sFileName
-	$sAu3FilePath=@ScriptDir & "\conf\script\" & $sAu3FileName
+	$sAu3FilePath=@WorkingDir & "\conf\script\" & $sAu3FileName
 
 	;执行脚本
-	$iRunResult=RunWait($sPathAutoIt3 & " " & $sAu3FilePath & " " & $sFilePath)
+	$iRunResult=RunWait('"' & $sPathAutoIt3 & '" /AutoIt3ExecuteScript "' & $sAu3FilePath & '"', @WorkingDir)
 	Sleep(500)
-	If Not $iRunResult Then MsgToExit($sType&"对应脚本执行失败，自动化安装退出！ ")
+	If Not $iRunResult Then MsgToExit($sType&"对应脚本执行失败("&$iRunResult&")，自动化安装退出！ ")
 EndFunc
 
 Func LoadBatt_Run($sType)
@@ -134,7 +119,7 @@ Func LoadBatt_Run($sType)
 	$sBattFileName=FindFileByStart($aBattFileNames,$sType)
 	If StringLen($sBattFileName)==0 Then MsgToExit("未找到"&$sType&"对应的batt文件，自动化安装退出！")
 
-	$sBattFilePath=@ScriptDir & "\conf\batt\" & $sBattFileName
+	$sBattFilePath=@WorkingDir & "\conf\batt\" & $sBattFileName
 
 	;读取batt文件内容
 	$hFileOpen = FileOpen($sBattFilePath, $FO_READ)
@@ -212,7 +197,7 @@ Func MsgToExit($sError)
 EndFunc
 
 Func BatRunObsolete($sType)
-	$aCmdLines=FileReadToArray(@ScriptDir&"\conf\"&$sType&".bat")
+	$aCmdLines=FileReadToArray(@WorkingDir&"\conf\"&$sType&".bat")
 	$iLineCount = @extended
 	If @error Then
 		_FileWriteLog($hFile, $sType&".bat 文件读取出错，自动化安装退出！")
