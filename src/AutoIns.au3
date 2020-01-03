@@ -286,9 +286,9 @@ Func _LoadBattToRun($sType)
 	If Not $hFileWrite Then Return "关闭临时" & $sType &".bat文件出错"
 	;执行临时bat文件
 	Local $iRunDosError=_RunDos($sTempBatPath)
-	If $iRunDosError<>0 Then Return $sType&"对应批处理失败"&$sTempBatPath
+	If $iRunDosError<>0 Then Return $sType&"对应批处理失败"
 	;删除临时bat文件
-	;FileDelete($sTempBatPath)
+	FileDelete($sTempBatPath)
 	Return ""
 EndFunc
 
