@@ -19,10 +19,10 @@ Func _FindFileFromPath($sPath,$sStart,$sAccept)
     If @error = 4 Then
 		Return ""
     EndIf
-	Return FindFileByStart($aFileNames,$sStart)
+	Return _FindFileByStart($aFileNames,$sStart)
 EndFunc
 
-Func FindFileByStart($aFileNames,$sStart)
+Func _FindFileByStart($aFileNames,$sStart)
 	For $sFileName in $aFileNames
 		If StringLower(StringLeft($sFileName,StringLen($sStart)))==StringLower($sStart) Then
 			Return $sFileName

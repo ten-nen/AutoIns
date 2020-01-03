@@ -11,20 +11,20 @@
 ; Script Start - Add your code below here
 #include "extends\SysExtend.au3"
 
-Main()
+_Main()
 
 Exit 1 ;返回成功标示
 
 
-Func Main()
+Func _Main()
 
-	RunDefault()
+	_RunDefault()
 
-	Install()
+	_Install()
 
 EndFunc
 
-Func Install()
+Func _Install()
 	WinWaitActive("Microsoft .NET Framework 4.5.2","我已阅读并接受许可条款(&A)。")
 	$aPosition=ControlGetPos("Microsoft .NET Framework 4.5.2","我已阅读并接受许可条款(&A)。","Button3")
 	MouseClick("left", $aPosition[0], $aPosition[1])

@@ -11,20 +11,20 @@
 ; Script Start - Add your code below here
 #include "extends\SysExtend.au3"
 
-Main()
+_Main()
 
 Exit 1 ;返回成功标示
 
 
-Func Main()
+Func _Main()
 
-	RunDefault()
+	_RunDefault()
 
-	Install()
+	_Install()
 
 EndFunc
 
-Func Install()
+Func _Install()
 	WinWaitActive("Microsoft ReportViewer 2010 Redistributable 安装程序","下一步(&N) >")
 	Send("!n")
 	$aPosition=ControlGetPos("Microsoft ReportViewer 2010 Redistributable 安装程序","我已阅读并接受许可条款(&A)。","Button3")

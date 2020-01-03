@@ -11,10 +11,11 @@
 ; Script Start - Add your code below here
 #include "FileExtend.au3"
 
-Func RunDefault()
+Func _RunDefault()
+	Opt("TrayIconHide", 1) ;隐藏托盘图标
 	Opt("MouseCoordMode", 2); 设置激活窗口的相对坐标位置
 	Opt("MouseClickDelay", 500); 设置鼠标点击次数的间隔时长为0.5s
-
+	Sleep(10000)
 	$sFilePath=_FindFileFromPath(@WorkingDir&"\resources",StringTrimRight(@ScriptName,4),"*")
 	If $sFilePath="" Then Exit ;获取对应文件
 

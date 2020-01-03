@@ -11,20 +11,20 @@
 ; Script Start - Add your code below here
 #include "extends\SysExtend.au3"
 
-Main()
+_Main()
 
 Exit 1 ;返回成功标示
 
 
-Func Main()
+Func _Main()
 
-	RunDefault()
+	_RunDefault()
 
-	Install()
+	_Install()
 
 EndFunc
 
-Func Install()
+Func _Install()
 	WinWaitActive("GBES客户端驱动","下一步(&N) >")
 	Send("!n")
 	WinWaitActive("GBES客户端驱动","选择安装位置")

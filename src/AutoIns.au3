@@ -22,108 +22,234 @@
 #AutoIt3Wrapper_Res_LegalTradeMarks=Ten'nen
 #AutoIt3Wrapper_Res_Language=2052
 #EndRegion ;**** 编译指令由 by AutoIt3Wrapper_GUI 创建 ****
-#Region ;**** 编译指令由 by AutoIt3Wrapper_GUI 创建 ****
+
 #include <MsgBoxConstants.au3>
 #include <WinAPIFiles.au3>
 #include <Process.au3>
 #include <File.au3>
 
-Local Const $sConfigPath =@WorkingDir&"\conf\AutoIns.ini"
-Local Const $sSqlServerIniPath=@WorkingDir&"\conf\sqlserver.ini"
-Local Const $sPathAutoIt3=@WorkingDir & "\lib\AutoIt3\AutoIt3_x64.exe"
-Local $aInstalls,$aBattFileNames,$aAu3FileNames
-Local $hFile = FileOpen(@WorkingDir & "\install.log", 1)
+#Region ### START Koda GUI include section ### Form=
+#include <ButtonConstants.au3>
+#include <GUIConstantsEx.au3>
+#include <GuiListView.au3>
+#include <misc.au3>
+#include <ProgressConstants.au3>
+#include <StaticConstants.au3>
+#include <WindowsConstants.au3>
+#include <ListViewConstants.au3>
+#include <ProgressConstants.au3>
+#include <TrayConstants.au3>
+#EndRegion ### END Koda GUI include section ###
 
-Main()
+Global Const $sConfigPath =@WorkingDir&"\conf\AutoIns.ini"
+Global Const $sSqlServerIniPath=@WorkingDir&"\conf\sqlserver.ini"
+Global Const $sPathAutoIt3=@WorkingDir & "\lib\AutoIt3\AutoIt3_x64.exe"
+Global $aInstalls,$aBattFileNames,$aAu3FileNames
+Global $hLogFile = FileOpen(@WorkingDir & "\install.log", 1)
+;gui control
+Global $hFmMain,$hListInstall,$hBtnStart,$hProgressInstall
 
+OnAutoItExitRegister("_OnExit")
+
+_Main()
 
 ;func
-Func Main()
-	If Not IsAdmin() Then MsgToExit("请使用管理员权限运行！")
+Func _Main()
+	If Not IsAdmin() Then _MsgToExit("请使用管理员权限运行！")
 
-	Load_Config()
+	_Load_Config()
 
-	Install_Run()
+	_ShowMainForm() ;gui安装替换_Install()
 
-	MsgToExit('自动化安装完成..')
 EndFunc
 
-Func Load_Config()
-	_FileWriteLog($hFile, "开始加载配置文件..")
-	$iFileExists = FileExists($sConfigPath)
-	If Not $iFileExists Then MsgToExit("未找到配置文件，自动化安装退出！")
+Func _OnExit()
+	FileClose($hLogFile)
+EndFunc
+
+Func _Load_Config()
+	_FileWriteLog($hLogFile, "开始加载配置文件..")
+ 	Local $iFileExists = FileExists($sConfigPath)
+	If Not $iFileExists Then _MsgToExit("未找到配置文件，自动化安装退出！")
 
 	$aInstalls = IniReadSection($sConfigPath, "Install")
-	If @error Then MsgToExit("加载配置文件出错，自动化安装退出！")
+	If @error Then _MsgToExit("加载配置文件出错，自动化安装退出！")
 
 	$iFileExists = FileExists($sPathAutoIt3)
-	If Not $iFileExists Then MsgToExit("未找到AutoIt3.exe文件，自动化安装退出！")
+	If Not $iFileExists Then _MsgToExit("未找到AutoIt3.exe文件，自动化安装退出！")
 
 	$aBattFileNames = _FileListToArray(@WorkingDir&"\conf\batt", "*")
     If @error = 1 Then
-		MsgToExit("bat模板目录无效（" & @WorkingDir&"\conf\batt" & "），自动化安装退出！")
-    EndIf
-    If @error = 4 Then
-		MsgToExit("bat模板目录（" & @WorkingDir&"\conf\batt" & "）未发现文件，自动化安装退出！")
+		_MsgToExit("bat模板目录无效（" & @WorkingDir&"\conf\batt" & "），自动化安装退出！")
     EndIf
 
 	$aAu3FileNames = _FileListToArray(@WorkingDir&"\conf\script", "*")
     If @error = 1 Then
-		MsgToExit("au3脚本目录无效（" & @WorkingDir&"\conf\script" & "），自动化安装退出！")
-    EndIf
-    If @error = 4 Then
-		MsgToExit("au3脚本目录（" & @WorkingDir&"\conf\script" & "）未发现文件，自动化安装退出！")
+		_MsgToExit("au3脚本目录无效（" & @WorkingDir&"\conf\script" & "），自动化安装退出！")
     EndIf
 
-	_FileWriteLog($hFile, "加载配置文件完毕..")
+	_FileWriteLog($hLogFile, "加载配置文件完毕..")
 EndFunc
 
-Func Install_Run()
+Func _ShowMainForm()
+	;托盘
+	Opt("TrayMenuMode", 3)
+	Local $iExit = TrayCreateItem("退出")
+	TraySetState($TRAY_ICONSTATE_SHOW)
+
+	;主窗体
+	$hFmMain = GUICreate("AutoIns", 332, 332, 192, 124)
+	$hListInstall = GUICtrlCreateListView("安装选项|安装方式|状态", 0, 0, 330, 300, -1, BitOR($LVS_EX_GRIDLINES, $LVS_EX_FULLROWSELECT, $LVS_EX_CHECKBOXES))
+	GUICtrlSendMsg(-1, $LVM_SETCOLUMNWIDTH, 0, 200)
+	GUICtrlSendMsg(-1, $LVM_SETCOLUMNWIDTH, 1, 66)
+	GUICtrlSendMsg(-1, $LVM_SETCOLUMNWIDTH, 2, 60)
+
+	For $i = 1 To $aInstalls[0][0]
+		GUICtrlCreateListViewItem($aInstalls[$i][0]&"|"&$aInstalls[$i][1]&"|", $hListInstall)
+		_GUICtrlListView_SetItemChecked($hListInstall,$i-1)
+	Next
+
+	$hBtnStart = GUICtrlCreateButton("开始", 0, 303, 330, 25)
+	GUICtrlSetCursor (-1, 0)
+	GUICtrlSetState($hBtnStart, $GUI_SHOW)
+	$hProgressInstall = GUICtrlCreateProgress(0, 303, 330, 25)
+	GUICtrlSetState($hProgressInstall, $GUI_HIDE)
+
+	GUISetState(@SW_SHOW)
+
+	While 1
+		;窗体信息
+		$nMsg = GUIGetMsg()
+		Switch $nMsg
+			Case $GUI_EVENT_CLOSE
+				Exit
+			Case $hBtnStart
+				OnStart()
+			Case $GUI_EVENT_PRIMARYDOWN
+				_Arrange_List()
+		EndSwitch
+		;托盘信息
+		Switch TrayGetMsg()
+			Case $iExit
+				Exit
+		EndSwitch
+	WEnd
+EndFunc
+
+Func _Arrange_List()
+    $Selected = _GUICtrlListView_GetHotItem($hListInstall)
+    If $Selected = -1 then Return
+	While _IsPressed(1)
+    WEnd
+    $Dropped = _GUICtrlListView_GetHotItem($hListInstall)
+    If $Dropped > -1 then
+        _GUICtrlListView_BeginUpdate($hListInstall)
+		$aItems=StringSplit(_GUICtrlListView_GetItemTextString($hListInstall, $Selected),"|")
+        If $Selected < $Dropped Then
+            _GUICtrlListView_InsertItem($hListInstall, $aItems[1], $Dropped + 1)
+			_GUICtrlListView_SetItem($hListInstall,$aItems[2], $Dropped + 1,1)
+			_GUICtrlListView_SetItem($hListInstall,$aItems[3], $Dropped + 1,2)
+            _GUICtrlListView_SetItemChecked($hListInstall, $Dropped + 1, _GUICtrlListView_GetItemChecked($hListInstall, $Selected))
+            _GUICtrlListView_DeleteItem($hListInstall, $Selected)
+        ElseIf $Selected > $Dropped Then
+            _GUICtrlListView_InsertItem($hListInstall, $aItems[1], $Dropped)
+			_GUICtrlListView_SetItem($hListInstall,$aItems[2], $Dropped,1)
+			_GUICtrlListView_SetItem($hListInstall,$aItems[3], $Dropped,2)
+            _GUICtrlListView_SetItemChecked($hListInstall, $Dropped, _GUICtrlListView_GetItemChecked($hListInstall, $Selected + 1))
+            _GUICtrlListView_DeleteItem($hListInstall, $Selected + 1)
+        EndIf
+        _GUICtrlListView_EndUpdate($hListInstall)
+    EndIf
+EndFunc
+
+Func OnStart()
+	;查询选择安装项的下标集合
+	Local $aCheckedIndexArray[0]
+	For $i = 0 To _GUICtrlListView_GetItemCount($hListInstall) - 1
+        If _GUICtrlListView_GetItemChecked($hListInstall, $i) Then
+			_ArrayAdd($aCheckedIndexArray,$i)
+        EndIf
+    Next
+	If UBound($aCheckedIndexArray,1)==0 Then Return
+	GUICtrlSetState($hBtnStart, $GUI_HIDE)
+	GUICtrlSetState($hProgressInstall, $GUI_SHOW)
+	_Install($aCheckedIndexArray)
+EndFunc
+
+Func _Install($aCheckedIndexArray)
     ;BlockInput($BI_DISABLE) ; 禁用用户的鼠标和键盘输入
 	;Opt("MouseCoordMode", 2); 设置激活窗口的相对坐标位置
 	;Opt("MouseClickDelay", 500); 设置鼠标点击次数的间隔时长为0.5s
 
-	For $i = 1 To $aInstalls[0][0]
-		_FileWriteLog($hFile, $aInstalls[$i][0]&" 开始处理..")
-		If $aInstalls[$i][1]=="au3" Then
-			LoadScript_Run($aInstalls[$i][0])
-		ElseIf $aInstalls[$i][1]=="bat" Then
-			LoadBatt_Run($aInstalls[$i][0])
+	GUICtrlSetState($hListInstall,$GUI_DISABLE)
+	For $i = 0 To UBound($aCheckedIndexArray,1) - 1
+		$sResultMsg=""
+		$sType=_GUICtrlListView_GetItem($hListInstall,$aCheckedIndexArray[$i],0)[3]
+		$sExcute=_GUICtrlListView_GetItem($hListInstall,$aCheckedIndexArray[$i],1)[3]
+		_FileWriteLog($hLogFile, $sType&" 开始处理..")
+		_GUICtrlListView_SetItem($hListInstall,"安装中..",$aCheckedIndexArray[$i],2)
+		If $sExcute=="au3" Then
+			$sResultMsg=_LoadScriptToRun($sType)
+		ElseIf $sExcute=="bat" Then
+			$sResultMsg=_LoadBattToRun($sType)
 		EndIf
-		_FileWriteLog($hFile, $aInstalls[$i][0]&" 处理完成..")
 		Sleep(1000)
+		If $sResultMsg=="" Then
+			GUICtrlSetData($hProgressInstall,($i+1)/UBound($aCheckedIndexArray,1)*100)
+			_FileWriteLog($hLogFile, $sType&" 处理完成..")
+			_GUICtrlListView_SetItem($hListInstall,"安装完成",$aCheckedIndexArray[$i],2)
+			_GUICtrlListView_SetItemChecked($hListInstall,$aCheckedIndexArray[$i],False)
+		Else
+			_FileWriteLog($hLogFile,"安装失败(原因："&$sResultMsg&")，自动化安装停止！")
+			_GUICtrlListView_SetItem($hListInstall,"安装失败",$aCheckedIndexArray[$i],2)
+			MsgBox($MB_SYSTEMMODAL,"提示信息","安装失败(原因："&$sResultMsg&")，自动化安装停止！")
+			GUICtrlSetState($hListInstall,$GUI_ENABLE)
+			GUICtrlSetState($hProgressInstall, $GUI_HIDE)
+			GUICtrlSetState($hBtnStart, $GUI_SHOW)
+			Return
+		EndIf
 	Next
 
 	;BlockInput($BI_ENABLE) ; 启用户鼠标和键盘输入
+
+	If MsgBox($MB_OKCANCEL,"提示信息","自动化安装完成，确定退出？")==$IDOK Then
+		_FileWriteLog($hLogFile,"自动化安装完成..")
+		Exit
+	EndIf
 EndFunc
 
-Func LoadScript_Run($sType)
+Func _LoadScriptToRun($sType)
 	;查找对应脚本
-	$sAu3FileName=FindFileByStart($aAu3FileNames,$sType)
-	If StringLen($sAu3FileName)==0 Then MsgToExit($sType&"未找到对应au3脚本文件，自动化安装退出！")
+	$sAu3FileName=_FindFileByStart($aAu3FileNames,$sType)
+	If StringLen($sAu3FileName)==0 Then Return $sType&"未找到对应au3脚本文件"
 
 	$sAu3FilePath=@WorkingDir & "\conf\script\" & $sAu3FileName
 
 	;执行脚本
-	$iRunResult=RunWait('"' & $sPathAutoIt3 & '" /AutoIt3ExecuteScript "' & $sAu3FilePath & '"', @WorkingDir)
+	Local $iRunResult=RunWait('"' & $sPathAutoIt3 & '" /AutoIt3ExecuteScript "' & $sAu3FilePath & '"', @WorkingDir)
 	Sleep(500)
-	If Not $iRunResult Then MsgToExit($sType&"对应脚本执行失败("&$iRunResult&")，自动化安装退出！ ")
+	If Not $iRunResult Then Return $sType&"对应脚本执行失败:"&$iRunResult
+
+	Return ""
 EndFunc
 
-Func LoadBatt_Run($sType)
+Func _LoadBattToRun($sType)
 	$sTypeLower= StringLower($sType)
 	;如果是sqlserver，需配置sqlserver.ini文件
-	If $sTypeLower=="sqlserver" Then ConfigSqlServerIni()
+	If $sTypeLower=="sqlserver" Then
+	  $sConfigSqlServerIniResult=_ConfigSqlServerIni()
+	  If $sConfigSqlServerIniResult<>"" Then Return $sConfigSqlServerIniResult
+	EndIf
 
 	;查找对应batt文件
-	$sBattFileName=FindFileByStart($aBattFileNames,$sType)
-	If StringLen($sBattFileName)==0 Then MsgToExit("未找到"&$sType&"对应的batt文件，自动化安装退出！")
+	$sBattFileName=_FindFileByStart($aBattFileNames,$sType)
+	If StringLen($sBattFileName)==0 Then Return "未找到"&$sType&"对应的batt文件"
 
 	$sBattFilePath=@WorkingDir & "\conf\batt\" & $sBattFileName
 
 	;读取batt文件内容
 	$hFileOpen = FileOpen($sBattFilePath, $FO_READ)
-    If $hFileOpen = -1 Then MsgToExit($sBattFilePath&"读取时出现错误，自动化安装退出！")
+    If $hFileOpen = -1 Then Return $sBattFilePath&"读取时出现错误"
     $sBattContent = FileRead($hFileOpen)
 
 	;替换系统变量
@@ -148,26 +274,27 @@ Func LoadBatt_Run($sType)
 	FileClose($hFileOpen)
 
 	;替换后bat文件内容输出log
-	_FileWriteLog($hFile,$sType&".bat"&@CRLF&"-------------------------------------------------------开始-------------------------------------------------------"&@CRLF&$sBattContent&@CRLF&"-------------------------------------------------------结束-------------------------------------------------------")
+	_FileWriteLog($hLogFile,$sType&".bat"&@CRLF&"-------------------------------------------------------开始-------------------------------------------------------"&@CRLF&$sBattContent&@CRLF&"-------------------------------------------------------结束-------------------------------------------------------")
 
 	;bat内容保存临时文件
-	$sTempBatPath=@TempDir & "\" & $sType &'.bat'
-	$hFileWrite = FileOpen($sTempBatPath, $FO_OVERWRITE)
-	If $hFileWrite = -1 Then MsgToExit("写入临时" & $sType &".bat文件出错，自动化安装退出！")
-	FileWrite($hFileWrite,$sBattContent)
-	FileClose($hFileWrite)
-
+	$sTempBatPath=@TempDir & "\" & $sType & Random(100000, 999999, 1) &'.bat'
+	$hFileOpen = FileOpen($sTempBatPath, $FO_OVERWRITE)
+	If $hFileOpen = -1 Then Return "获取临时" & $sType &".bat文件句柄出错"
+	$hFileWrite = FileWrite($hFileOpen,$sBattContent)
+	If Not $hFileWrite Then Return "写入临时" & $sType &".bat文件出错"
+	$hFileWrite = FileClose($hFileOpen)
+	If Not $hFileWrite Then Return "关闭临时" & $sType &".bat文件出错"
 	;执行临时bat文件
-	$iResult=_RunDos($sTempBatPath)
+	Local $iRunDosError=_RunDos($sTempBatPath)
+	If $iRunDosError<>0 Then Return $sType&"对应批处理失败"&$sTempBatPath
 	;删除临时bat文件
-	FileDelete($sTempBatPath)
-	;$iResult=_RunDos($sBattContent)
-	If $iResult<>0 Then MsgToExit($sType&"对应批处理失败，自动化安装退出！ ")
+	;FileDelete($sTempBatPath)
+	Return ""
 EndFunc
 
-Func ConfigSqlServerIni()
+Func _ConfigSqlServerIni()
 	$hFileOpen = FileOpen($sSqlServerIniPath, $FO_READ)
-    If $hFileOpen = -1 Then MsgToExit("sqlserver.ini读取出错，自动化安装退出！")
+    If $hFileOpen = -1 Then Return "sqlserver.ini读取出错"
     $sSqlServerIniContent = FileRead($hFileOpen)
 	FileClose($hFileOpen)
 
@@ -175,12 +302,13 @@ Func ConfigSqlServerIni()
 	$sSqlServerIniContent=StringRegExpReplace($sSqlServerIniContent,'SQLSYSADMINACCOUNTS=".+?"','SQLSYSADMINACCOUNTS="'&@ComputerName&'\\'&@UserName&'"')
 
 	$hFileWrite = FileOpen($sSqlServerIniPath, $FO_OVERWRITE)
-    If $hFileWrite = -1 Then MsgToExit("sqlserver.ini写入出错，自动化安装退出！")
+    If $hFileWrite = -1 Then Return "sqlserver.ini写入出错"
 	FileWrite($hFileWrite,$sSqlServerIniContent)
 	FileClose($hFileWrite)
+	Return ""
 EndFunc
 
-Func FindFileByStart($aFileNames,$sStart)
+Func _FindFileByStart($aFileNames,$sStart)
 	For $sFileName in $aFileNames
 		If StringLower(StringLeft($sFileName,StringLen($sStart)))==StringLower($sStart) Then
 			Return $sFileName
@@ -189,39 +317,11 @@ Func FindFileByStart($aFileNames,$sStart)
 	Return ""
 EndFunc
 
-Func MsgToExit($sError)
+Func _MsgToExit($sError)
 	MsgBox($MB_SYSTEMMODAL,"提示信息",$sError)
-	_FileWriteLog($hFile,$sError)
-	FileClose($hFile)
+	_FileWriteLog($hLogFile,$sError)
 	Exit
 EndFunc
 
-Func BatRunObsolete($sType)
-	$aCmdLines=FileReadToArray(@WorkingDir&"\conf\"&$sType&".bat")
-	$iLineCount = @extended
-	If @error Then
-		_FileWriteLog($hFile, $sType&".bat 文件读取出错，自动化安装退出！")
-		FileClose($hFile)
-		Exit
-		MsgToExit($sType&".bat 文件读取出错，自动化安装退出！")
-	EndIf
-	For $i = 0 To $iLineCount - 1 ;
-		$iResult=0
-		$sLeft3=StringLower(StringLeft($aCmdLines[$i],3))
-		If $sLeft3<>"rem" And $sLeft3<>"" Then ;注释代码不执行
-			$iResult=Execute_CmdLine($aCmdLines[$i])
-		EndIf
-		If $iResult<>0 Then
-			MsgToExit($sType&".bat 处理失败，自动化安装退出！ 行："&$aCmdLines[$i])
-		EndIf
-	Next
-EndFunc
-
-Func Execute_CmdLine($sCmdLine)
-	MsgBox($MB_SYSTEMMODAL,"信息",$sCmdLine)
-	Return 0
-	;$iResult=_RunDos($sCmdLine)
-	;Return $iResult
-EndFunc
 
 
