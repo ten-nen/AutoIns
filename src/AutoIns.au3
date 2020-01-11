@@ -59,7 +59,7 @@ Func _Main()
 
 	_Load_Config()
 
-	_ShowMainForm() ;gui安装替换_Install()
+	_ShowMainForm()
 
 EndFunc
 
@@ -124,7 +124,7 @@ Func _ShowMainForm()
 			Case $GUI_EVENT_CLOSE
 				Exit
 			Case $hBtnStart
-				OnStart()
+				_OnStart()
 			Case $GUI_EVENT_PRIMARYDOWN
 				_Arrange_List()
 		EndSwitch
@@ -162,7 +162,7 @@ Func _Arrange_List()
     EndIf
 EndFunc
 
-Func OnStart()
+Func _OnStart()
 	;查询选择安装项的下标集合
 	Local $aCheckedIndexArray[0]
 	For $i = 0 To _GUICtrlListView_GetItemCount($hListInstall) - 1
@@ -228,7 +228,7 @@ Func _LoadScriptToRun($sType)
 	;执行脚本
 	Local $iRunResult=RunWait('"' & $sPathAutoIt3 & '" /AutoIt3ExecuteScript "' & $sAu3FilePath & '"', @WorkingDir)
 	Sleep(500)
-	If Not $iRunResult Then Return $sType&"对应脚本执行失败:"&$iRunResult
+	If Not $iRunResult Then Return $sType&"对应脚本执行失败，错误-"&$iRunResult&":"&@error
 
 	Return ""
 EndFunc
@@ -285,10 +285,12 @@ Func _LoadBattToRun($sType)
 	$hFileWrite = FileClose($hFileOpen)
 	If Not $hFileWrite Then Return "关闭临时" & $sType &".bat文件出错"
 	;执行临时bat文件
-	Local $iRunDosError=_RunDos($sTempBatPath)
-	If $iRunDosError<>0 Then Return $sType&"对应批处理失败"
+	Local $iRunDosResult=ShellExecuteWait($sTempBatPath)
+	If $iRunDosResult<>0 Then Return $sType&"对应批处理失败，错误-"&$iRunDosResult&":"&@error
 	;删除临时bat文件
 	FileDelete($sTempBatPath)
+	;更新环境变量 not work
+	;EnvUpdate()
 	Return ""
 EndFunc
 
@@ -322,6 +324,3 @@ Func _MsgToExit($sError)
 	_FileWriteLog($hLogFile,$sError)
 	Exit
 EndFunc
-
-
-
