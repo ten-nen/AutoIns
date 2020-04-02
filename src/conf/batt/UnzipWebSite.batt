@@ -1,0 +1,1 @@
+{{@WorkingDir}}\resources\7z\7z.exe x {{@WorkingDir}}\resources\{{FileName}}  -o{{OutputPaht}}

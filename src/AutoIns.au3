@@ -42,7 +42,6 @@
 #EndRegion ### END Koda GUI include section ###
 
 Global Const $sConfigPath =@WorkingDir&"\conf\AutoIns.ini"
-Global Const $sSqlServerIniPath=@WorkingDir&"\conf\sqlserver.ini"
 Global Const $sPathAutoIt3=@WorkingDir & "\lib\AutoIt3\AutoIt3_x64.exe"
 Global $aInstalls,$aBattFileNames,$aAu3FileNames
 Global $hLogFile = FileOpen(@WorkingDir & "\install.log", 1)
@@ -78,12 +77,12 @@ Func _Load_Config()
 	$iFileExists = FileExists($sPathAutoIt3)
 	If Not $iFileExists Then _MsgToExit("未找到AutoIt3.exe文件，自动化安装退出！")
 
-	$aBattFileNames = _FileListToArray(@WorkingDir&"\conf\batt", "*")
+	$aBattFileNames = _FileListToArrayRec(@WorkingDir&"\conf\batt", "*.batt", $FLTAR_FILESFOLDERS, $FLTAR_RECUR, $FLTAR_SORT)
     If @error = 1 Then
 		_MsgToExit("bat模板目录无效（" & @WorkingDir&"\conf\batt" & "），自动化安装退出！")
     EndIf
 
-	$aAu3FileNames = _FileListToArray(@WorkingDir&"\conf\script", "*")
+	$aAu3FileNames = _FileListToArrayRec(@WorkingDir&"\conf\script", "*.au3", $FLTAR_FILESFOLDERS, $FLTAR_RECUR, $FLTAR_SORT)
     If @error = 1 Then
 		_MsgToExit("au3脚本目录无效（" & @WorkingDir&"\conf\script" & "），自动化安装退出！")
     EndIf
@@ -98,8 +97,8 @@ Func _ShowMainForm()
 	TraySetState($TRAY_ICONSTATE_SHOW)
 
 	;主窗体
-	$hFmMain = GUICreate("AutoIns", 332, 332, 192, 124)
-	$hListInstall = GUICtrlCreateListView("安装选项|安装方式|状态", 0, 0, 330, 300, -1, BitOR($LVS_EX_GRIDLINES, $LVS_EX_FULLROWSELECT, $LVS_EX_CHECKBOXES))
+	$hFmMain = GUICreate("AutoIns", 352, 352, 192, 124)
+	$hListInstall = GUICtrlCreateListView("安装选项|安装方式|状态", 0, 0, 350, 320, -1, BitOR($LVS_EX_GRIDLINES, $LVS_EX_FULLROWSELECT, $LVS_EX_CHECKBOXES))
 	GUICtrlSendMsg(-1, $LVM_SETCOLUMNWIDTH, 0, 200)
 	GUICtrlSendMsg(-1, $LVM_SETCOLUMNWIDTH, 1, 66)
 	GUICtrlSendMsg(-1, $LVM_SETCOLUMNWIDTH, 2, 60)
@@ -109,10 +108,10 @@ Func _ShowMainForm()
 		_GUICtrlListView_SetItemChecked($hListInstall,$i-1)
 	Next
 
-	$hBtnStart = GUICtrlCreateButton("开始", 0, 303, 330, 25)
+	$hBtnStart = GUICtrlCreateButton("开始", 0, 323, 350, 25)
 	GUICtrlSetCursor (-1, 0)
 	GUICtrlSetState($hBtnStart, $GUI_SHOW)
-	$hProgressInstall = GUICtrlCreateProgress(0, 303, 330, 25)
+	$hProgressInstall = GUICtrlCreateProgress(0, 323, 350, 25)
 	GUICtrlSetState($hProgressInstall, $GUI_HIDE)
 
 	GUISetState(@SW_SHOW)
@@ -225,27 +224,27 @@ Func _LoadScriptToRun($sType)
 
 	$sAu3FilePath=@WorkingDir & "\conf\script\" & $sAu3FileName
 
+	;查找兼容脚本
+	$sAu3FilePath=_FindCompatibleFile($sAu3FilePath)
+
 	;执行脚本
 	Local $iRunResult=RunWait('"' & $sPathAutoIt3 & '" /AutoIt3ExecuteScript "' & $sAu3FilePath & '"', @WorkingDir)
 	Sleep(500)
-	If Not $iRunResult Then Return $sType&"对应脚本执行失败，错误-"&$iRunResult&":"&@error
+	If $iRunResult<>0 Then Return $sType&"对应脚本执行失败，错误-"&$iRunResult&":"&@error
 
 	Return ""
 EndFunc
 
 Func _LoadBattToRun($sType)
-	$sTypeLower= StringLower($sType)
-	;如果是sqlserver，需配置sqlserver.ini文件
-	If $sTypeLower=="sqlserver" Then
-	  $sConfigSqlServerIniResult=_ConfigSqlServerIni()
-	  If $sConfigSqlServerIniResult<>"" Then Return $sConfigSqlServerIniResult
-	EndIf
 
 	;查找对应batt文件
 	$sBattFileName=_FindFileByStart($aBattFileNames,$sType)
 	If StringLen($sBattFileName)==0 Then Return "未找到"&$sType&"对应的batt文件"
 
 	$sBattFilePath=@WorkingDir & "\conf\batt\" & $sBattFileName
+
+	;查找兼容batt
+	$sBattFilePath=_FindCompatibleFile($sBattFilePath)
 
 	;读取batt文件内容
 	$hFileOpen = FileOpen($sBattFilePath, $FO_READ)
@@ -285,28 +284,12 @@ Func _LoadBattToRun($sType)
 	$hFileWrite = FileClose($hFileOpen)
 	If Not $hFileWrite Then Return "关闭临时" & $sType &".bat文件出错"
 	;执行临时bat文件
-	Local $iRunDosResult=ShellExecuteWait($sTempBatPath)
-	If $iRunDosResult<>0 Then Return $sType&"对应批处理失败，错误-"&$iRunDosResult&":"&@error
+	Local $iRunBatResult=RunWait($sTempBatPath)
+	If $iRunBatResult<>0 Then Return $sType&"对应批处理失败，错误-"&$iRunBatResult&":"&@error
 	;删除临时bat文件
 	FileDelete($sTempBatPath)
 	;更新环境变量 not work
 	;EnvUpdate()
-	Return ""
-EndFunc
-
-Func _ConfigSqlServerIni()
-	$hFileOpen = FileOpen($sSqlServerIniPath, $FO_READ)
-    If $hFileOpen = -1 Then Return "sqlserver.ini读取出错"
-    $sSqlServerIniContent = FileRead($hFileOpen)
-	FileClose($hFileOpen)
-
-	$sSqlServerIniContent=StringRegExpReplace($sSqlServerIniContent,'ASSYSADMINACCOUNTS=".+?"','ASSYSADMINACCOUNTS="'&@ComputerName&'\\'&@UserName&'"')
-	$sSqlServerIniContent=StringRegExpReplace($sSqlServerIniContent,'SQLSYSADMINACCOUNTS=".+?"','SQLSYSADMINACCOUNTS="'&@ComputerName&'\\'&@UserName&'"')
-
-	$hFileWrite = FileOpen($sSqlServerIniPath, $FO_OVERWRITE)
-    If $hFileWrite = -1 Then Return "sqlserver.ini写入出错"
-	FileWrite($hFileWrite,$sSqlServerIniContent)
-	FileClose($hFileWrite)
 	Return ""
 EndFunc
 
@@ -317,6 +300,14 @@ Func _FindFileByStart($aFileNames,$sStart)
 		EndIf
 	Next
 	Return ""
+EndFunc
+
+Func _FindCompatibleFile($sDefaultFilePath)
+	Local $sEmpty,$sExtension
+	_PathSplit($sDefaultFilePath, $sEmpty, $sEmpty, $sEmpty, $sExtension)
+	Local $sCompatibleFile=StringTrimRight($sDefaultFilePath,StringLen($sExtension)) & "." & @OSVersion & $sExtension
+	If	FileExists($sCompatibleFile) Then Return $sCompatibleFile
+	Return $sDefaultFilePath
 EndFunc
 
 Func _MsgToExit($sError)

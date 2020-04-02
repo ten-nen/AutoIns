@@ -9,11 +9,12 @@
 #ce ----------------------------------------------------------------------------
 
 ; Script Start - Add your code below here
-#include "extends\SysExtend.au3"
+#include "extends\InsExtend.au3"
+#include "extends\ExitCode.au3"
 
 _Main()
 
-Exit 1 ;返回成功标示
+Exit $EXIT_SUCCESS ;返回成功标示
 
 
 Func _Main()

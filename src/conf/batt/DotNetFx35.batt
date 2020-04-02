@@ -1,1 +1,1 @@
-ServerManagerCMD.exe -I NET-Framework -allsubfeatures
+PowerShell -Command "Import-Module ServerManager; Install-WindowsFeature NET-Framework-Features -IncludeAllSubFeature -Source:'{{@WorkingDir}}\resources\netfx3.5'"

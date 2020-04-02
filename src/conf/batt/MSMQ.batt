@@ -1,0 +1,1 @@
+PowerShell -Command "Import-Module ServerManager; Install-WindowsFeature MSMQ -IncludeAllSubFeature; New-MsmqQueue -Name '{{MsmqQueueName}}' -QueueType Private"

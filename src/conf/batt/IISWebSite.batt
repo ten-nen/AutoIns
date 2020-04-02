@@ -4,33 +4,34 @@ rem ƒ¨»œ≈‰÷√
 %systemroot%\system32\inetsrv\appcmd set config -section:requestFiltering -requestLimits.maxAllowedContentLength:3000000000
 rem {{WebName}}
 %systemroot%\system32\inetsrv\appcmd add AppPool /name:{{WebName}} /managedRuntimeVersion:v4.0 /managedPipelineMode:Classic /enable32BitAppOnWin64:true
-%systemroot%\system32\inetsrv\appcmd set AppPool {{WebName}} -processModel.identityType:LocalSystem -processModel.pingResponseTime:0.00:15:00 -processModel.shutdownTimeLimit:0.00:15:00 -processModel.startupTimeLimit:0.00:15:00
+%systemroot%\system32\inetsrv\appcmd set AppPool {{WebName}} -processModel.identityType:LocalSystem -processModel.pingInterval:0.00:05:00 -processModel.pingResponseTime:0.00:15:00 -processModel.shutdownTimeLimit:0.00:15:00 -processModel.startupTimeLimit:0.00:15:00
 %systemroot%\system32\inetsrv\appcmd add site /name:{{WebName}} /bindings:"http/*:{{WebPort}}:" /physicalPath:"{{WebPath}}"
 %systemroot%\system32\inetsrv\appcmd set site /site.name:{{WebName}} /[path='/'].applicationPool:{{WebName}}
-mkdir D:\GBES\upload\XinJiangFangJian
-%systemroot%\system32\inetsrv\appcmd set config -section:system.applicationHost/sites /+"[name='{{WebName}}'].[path='/'].[path='/PDFPath',physicalPath='D:\GBES\upload\XinJiangFangJian']" /commit:apphost
+%systemroot%\system32\inetsrv\appcmd set config "XJFJ.Web" /section:defaultDocument /enabled:true /+files.[value='{{WebDefaultDocument}}']
+mkdir {{WebVirPath}}
+%systemroot%\system32\inetsrv\appcmd set config -section:system.applicationHost/sites /+"[name='{{WebName}}'].[path='/'].[path='/PDFPath',physicalPath='{{WebVirPath}}']" /commit:apphost
 rem {{WcfName}}
 %systemroot%\system32\inetsrv\appcmd add AppPool /name:{{WcfName}} /managedRuntimeVersion:v4.0 /managedPipelineMode:Classic /enable32BitAppOnWin64:true
-%systemroot%\system32\inetsrv\appcmd set AppPool {{WcfName}} -processModel.pingResponseTime:0.00:15:00 -processModel.shutdownTimeLimit:0.00:15:00 -processModel.startupTimeLimit:0.00:15:00
+%systemroot%\system32\inetsrv\appcmd set AppPool {{WcfName}} -processModel.pingInterval:0.00:05:00 -processModel.pingResponseTime:0.00:15:00 -processModel.shutdownTimeLimit:0.00:15:00 -processModel.startupTimeLimit:0.00:15:00
 %systemroot%\system32\inetsrv\appcmd add site /name:{{WcfName}} /bindings:"http/*:{{WcfPort}}:" /physicalPath:"{{WcfPath}}"
 %systemroot%\system32\inetsrv\appcmd set site /site.name:{{WcfName}} /[path='/'].applicationPool:{{WcfName}}
 rem {{FileName}}
 %systemroot%\system32\inetsrv\appcmd add AppPool /name:{{FileName}} /managedRuntimeVersion:v4.0 /managedPipelineMode:Classic /enable32BitAppOnWin64:true
-%systemroot%\system32\inetsrv\appcmd set AppPool {{FileName}} -processModel.identityType:LocalSystem -processModel.pingResponseTime:0.00:15:00 -processModel.shutdownTimeLimit:0.00:15:00 -processModel.startupTimeLimit:0.00:15:00
+%systemroot%\system32\inetsrv\appcmd set AppPool {{FileName}} -processModel.identityType:LocalSystem -processModel.pingInterval:0.00:05:00 -processModel.pingResponseTime:0.00:15:00 -processModel.shutdownTimeLimit:0.00:15:00 -processModel.startupTimeLimit:0.00:15:00
 %systemroot%\system32\inetsrv\appcmd add site /name:{{FileName}} /bindings:"http/*:{{FilePort}}:" /physicalPath:"{{FilePath}}"
 %systemroot%\system32\inetsrv\appcmd set site /site.name:{{FileName}} /[path='/'].applicationPool:{{FileName}}
 rem {{WFAdminName}}
 %systemroot%\system32\inetsrv\appcmd add AppPool /name:{{WFAdminName}} /managedRuntimeVersion:v4.0 /managedPipelineMode:Classic /enable32BitAppOnWin64:true
-%systemroot%\system32\inetsrv\appcmd set AppPool {{WFAdminName}} -processModel.pingResponseTime:0.00:15:00 -processModel.shutdownTimeLimit:0.00:15:00 -processModel.startupTimeLimit:0.00:15:00
+%systemroot%\system32\inetsrv\appcmd set AppPool {{WFAdminName}} -processModel.pingInterval:0.00:05:00 -processModel.pingResponseTime:0.00:15:00 -processModel.shutdownTimeLimit:0.00:15:00 -processModel.startupTimeLimit:0.00:15:00
 %systemroot%\system32\inetsrv\appcmd add site /name:{{WFAdminName}} /bindings:"http/*:{{WFAdminPort}}:" /physicalPath:"{{WFAdminPath}}"
 %systemroot%\system32\inetsrv\appcmd set site /site.name:{{WFAdminName}} /[path='/'].applicationPool:{{WFAdminName}}
 rem {{WFEngineName}}
 %systemroot%\system32\inetsrv\appcmd add AppPool /name:{{WFEngineName}} /managedRuntimeVersion:v4.0 /managedPipelineMode:Classic /enable32BitAppOnWin64:true
-%systemroot%\system32\inetsrv\appcmd set AppPool {{WFEngineName}} -processModel.pingResponseTime:0.00:15:00 -processModel.shutdownTimeLimit:0.00:15:00 -processModel.startupTimeLimit:0.00:15:00
+%systemroot%\system32\inetsrv\appcmd set AppPool {{WFEngineName}} -processModel.pingInterval:0.00:05:00 -processModel.pingResponseTime:0.00:15:00 -processModel.shutdownTimeLimit:0.00:15:00 -processModel.startupTimeLimit:0.00:15:00
 %systemroot%\system32\inetsrv\appcmd add site /name:{{WFEngineName}} /bindings:"http/*:{{WFEnginePort}}:" /physicalPath:"{{WFEnginePath}}"
 %systemroot%\system32\inetsrv\appcmd set site /site.name:{{WFEngineName}} /[path='/'].applicationPool:{{WFEngineName}}
 rem {{ConfigName}}
 %systemroot%\system32\inetsrv\appcmd add AppPool /name:{{ConfigName}} /managedRuntimeVersion:v4.0 /managedPipelineMode:Classic /enable32BitAppOnWin64:true
-%systemroot%\system32\inetsrv\appcmd set AppPool {{ConfigName}} -processModel.pingResponseTime:0.00:15:00 -processModel.shutdownTimeLimit:0.00:15:00 -processModel.startupTimeLimit:0.00:15:00
+%systemroot%\system32\inetsrv\appcmd set AppPool {{ConfigName}} -processModel.pingInterval:0.00:05:00 -processModel.pingResponseTime:0.00:15:00 -processModel.shutdownTimeLimit:0.00:15:00 -processModel.startupTimeLimit:0.00:15:00
 %systemroot%\system32\inetsrv\appcmd add site /name:{{ConfigName}} /bindings:"http/*:{{ConfigPort}}:" /physicalPath:"{{ConfigPath}}"
 %systemroot%\system32\inetsrv\appcmd set site /site.name:{{ConfigName}} /[path='/'].applicationPool:{{ConfigName}}

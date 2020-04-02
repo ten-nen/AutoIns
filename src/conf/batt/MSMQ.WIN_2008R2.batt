@@ -1,0 +1,7 @@
+ServerManagerCMD.exe -I MSMQ-Services
+ServerManagerCMD.exe -I MSMQ-Server
+ServerManagerCMD.exe -I MSMQ-Directory
+ServerManagerCMD.exe -I MSMQ-Triggers
+ServerManagerCMD.exe -I MSMQ-HTTP-Support
+ServerManagerCMD.exe -I MSMQ-Multicasting
+ServerManagerCMD.exe -I MSMQ-DCOM

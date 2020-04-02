@@ -1,1 +1,1 @@
-ServerManagerCMD.exe -I Web-Server
+PowerShell -Command "Import-Module ServerManager; Install-WindowsFeature NET-Framework-45-Features -IncludeAllSubFeature; Install-WindowsFeature web-server -IncludeAllSubFeature;
