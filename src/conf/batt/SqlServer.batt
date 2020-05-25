@@ -1,1 +1,1 @@
-{{@WorkingDir}}\resources\SqlServer\setup.exe /QS /IACCEPTSQLSERVERLICENSETERMS /PID={{Key}} /ConfigurationFile={{@WorkingDir}}\conf\sqlserver.ini
+{{@WorkingDir}}\resources\SqlServer\setup.exe /QS /IACCEPTSQLSERVERLICENSETERMS /PID={{Key}} /ConfigurationFile={{@WorkingDir}}\conf\sqlserver{{Version}}.ini

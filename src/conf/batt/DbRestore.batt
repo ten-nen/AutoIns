@@ -1,2 +1,3 @@
+mkdir "{{RestoreToPath}}"
 rem restore filelistonly from disk='D:\AutoIns\resources\ScoreData_XinJiang_FJ_34_20190927.bak'
-"C:\Program Files\Microsoft SQL Server\100\Tools\Binn\sqlcmd.exe" -S {{DbInstance}} -E -Q "RESTORE DATABASE {{RestoreName}} FROM DISK='{{BakFilePath}}' WITH MOVE '{{MdfLogicalName}}' TO '{{MdfFileToPath}}', Move '{{LogLogicalName}}' TO '{{LogFileToPath}}'"
+"{{SQLCMDPath}}\sqlcmd.exe" -S {{DbInstance}} -E -Q "RESTORE DATABASE {{RestoreName}} FROM DISK='{{BakFilePath}}' WITH MOVE '{{MdfLogicalName}}' TO '{{RestoreToPath}}\{{RestoreName}}_Data.mdf', Move '{{LogLogicalName}}' TO '{{RestoreToPath}}\{{RestoreName}}_log.ldf'"

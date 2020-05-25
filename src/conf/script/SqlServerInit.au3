@@ -13,7 +13,8 @@
 #include "extends\ExitCode.au3"
 #include <File.au3>
 
-Global Const $sSqlServerIniPath=@WorkingDir&"\conf\SqlServer.ini"
+Global Const $sSqlServer2008IniPath=@WorkingDir&"\conf\SqlServer2008.ini"
+Global Const $sSqlServer2012IniPath=@WorkingDir&"\conf\SqlServer2012.ini"
 
 _Main()
 
@@ -21,16 +22,18 @@ Exit $EXIT_SUCCESS ;返回成功标示
 
 Func _Main()
 
-	_ConfigSqlServerIni()
+	_ConfigSqlServerIni($sSqlServer2008IniPath)
 
+	_ConfigSqlServerIni($sSqlServer2012IniPath)
 EndFunc
 
-Func _ConfigSqlServerIni()
+Func _ConfigSqlServerIni($sSqlServerIniPath)
 	$hFileOpen = FileOpen($sSqlServerIniPath, $FO_READ)
     If $hFileOpen = -1 Then Exit $EXIT_INITFILE_READERROR
     $sSqlServerIniContent = FileRead($hFileOpen)
 	FileClose($hFileOpen)
 
+	$sSqlServerIniContent=StringRegExpReplace($sSqlServerIniContent,'CTLRUSERS=".+?"','CTLRUSERS="'&@ComputerName&'\\'&@UserName&'"')
 	$sSqlServerIniContent=StringRegExpReplace($sSqlServerIniContent,'ASSYSADMINACCOUNTS=".+?"','ASSYSADMINACCOUNTS="'&@ComputerName&'\\'&@UserName&'"')
 	$sSqlServerIniContent=StringRegExpReplace($sSqlServerIniContent,'SQLSYSADMINACCOUNTS=".+?"','SQLSYSADMINACCOUNTS="'&@ComputerName&'\\'&@UserName&'"')
 
